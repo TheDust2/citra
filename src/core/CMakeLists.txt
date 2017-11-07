@@ -24,6 +24,7 @@ set(SRCS
             file_sys/archive_selfncch.cpp
             file_sys/archive_source_sd_savedata.cpp
             file_sys/archive_systemsavedata.cpp
+            file_sys/cia_container.cpp
             file_sys/disk_archive.cpp
             file_sys/ivfc_archive.cpp
             file_sys/ncch_container.cpp
@@ -61,6 +62,7 @@ set(SRCS
             hle/kernel/timer.cpp
             hle/kernel/vm_manager.cpp
             hle/kernel/wait_object.cpp
+            hle/kernel/ipc.cpp
             hle/lock.cpp
             hle/romfs.cpp
             hle/service/ac/ac.cpp
@@ -247,6 +249,7 @@ set(HEADERS
             hle/kernel/event.h
             hle/kernel/handle_table.h
             hle/kernel/hle_ipc.h
+            hle/kernel/ipc.h
             hle/kernel/kernel.h
             hle/kernel/memory.h
             hle/kernel/mutex.h
