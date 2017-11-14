@@ -31,18 +31,14 @@ static QString getKeyName(int key_code) {
     }
 }
 
-static void SetButtonKey(int key, Common::ParamPackage& button_param) {
-    button_param = Common::ParamPackage{InputCommon::GenerateKeyboardParam(key)};
-}
-
-static void SetAnalogKey(int key, Common::ParamPackage& analog_param,
+static void SetAnalogButton(const Common::ParamPackage& input_param, Common::ParamPackage& analog_param,
                          const std::string& button_name) {
     if (analog_param.Get("engine", "") != "analog_from_button") {
         analog_param = {
             {"engine", "analog_from_button"}, {"modifier_scale", "0.5"},
         };
     }
-    analog_param.Set(button_name, InputCommon::GenerateKeyboardParam(key));
+    analog_param.Set(button_name, input_param.Serialize());
 }
 
 ConfigureInput::ConfigureInput(QWidget* parent)
@@ -58,7 +54,7 @@ ConfigureInput::ConfigureInput(QWidget* parent)
         ui->buttonStart,    ui->buttonSelect,   ui->buttonZL,        ui->buttonZR, ui->buttonHome,
     };
 
-    analog_map = {{
+    analog_map_buttons = {{
         {
             ui->buttonCircleUp, ui->buttonCircleDown, ui->buttonCircleLeft, ui->buttonCircleRight,
             ui->buttonCircleMod,
@@ -69,25 +65,38 @@ ConfigureInput::ConfigureInput(QWidget* parent)
         },
     }};
 
+    analog_map_stick = {ui->buttonCircleAnalog, ui->buttonCStickAnalog};
+
     for (int button_id = 0; button_id < Settings::NativeButton::NumButtons; button_id++) {
         if (button_map[button_id])
             connect(button_map[button_id], &QPushButton::released, [=]() {
                 handleClick(button_map[button_id],
-                            [=](int key) { SetButtonKey(key, buttons_param[button_id]); });
+                            [=](Common::ParamPackage params) { buttons_param[button_id] = params; },
+                            InputCommon::Polling::DeviceType::Button);
             });
     }
 
     for (int analog_id = 0; analog_id < Settings::NativeAnalog::NumAnalogs; analog_id++) {
         for (int sub_button_id = 0; sub_button_id < ANALOG_SUB_BUTTONS_NUM; sub_button_id++) {
-            if (analog_map[analog_id][sub_button_id] != nullptr) {
-                connect(analog_map[analog_id][sub_button_id], &QPushButton::released, [=]() {
-                    handleClick(analog_map[analog_id][sub_button_id], [=](int key) {
-                        SetAnalogKey(key, analogs_param[analog_id],
-                                     analog_sub_buttons[sub_button_id]);
-                    });
-                });
+            if (analog_map_buttons[analog_id][sub_button_id] != nullptr) {
+                connect(analog_map_buttons[analog_id][sub_button_id], &QPushButton::released,
+                        [=]() {
+                            handleClick(analog_map_buttons[analog_id][sub_button_id],
+                                        [=](Common::ParamPackage params) {
+                                            SetAnalogButton(params, analogs_param[analog_id],
+                                                            analog_sub_buttons[sub_button_id]);
+                                        },
+                                        InputCommon::Polling::DeviceType::Button);
+                        });
             }
         }
+        connect(analog_map_stick[analog_id], &QPushButton::released, [=]() {
+            handleClick(analog_map_stick[analog_id],
+                        [](Common::ParamPackage params) {
+
+                        },
+                        InputCommon::Polling::DeviceType::Analog);
+        });
     }
 
     connect(ui->buttonRestoreDefaults, &QPushButton::released, [this]() { restoreDefaults(); });
@@ -96,7 +105,7 @@ ConfigureInput::ConfigureInput(QWidget* parent)
     connect(timer.get(), &QTimer::timeout, [this]() {
         releaseKeyboard();
         releaseMouse();
-        key_setter = boost::none;
+        input_setter = boost::none;
         updateButtonLabels();
     });
 
@@ -127,13 +136,15 @@ void ConfigureInput::loadConfiguration() {
 
 void ConfigureInput::restoreDefaults() {
     for (int button_id = 0; button_id < Settings::NativeButton::NumButtons; button_id++) {
-        SetButtonKey(Config::default_buttons[button_id], buttons_param[button_id]);
+        buttons_param[button_id] = Common::ParamPackage{
+            InputCommon::GenerateKeyboardParam(Config::default_buttons[button_id])};
     }
 
     for (int analog_id = 0; analog_id < Settings::NativeAnalog::NumAnalogs; analog_id++) {
         for (int sub_button_id = 0; sub_button_id < ANALOG_SUB_BUTTONS_NUM; sub_button_id++) {
-            SetAnalogKey(Config::default_analogs[analog_id][sub_button_id],
-                         analogs_param[analog_id], analog_sub_buttons[sub_button_id]);
+            Common::ParamPackage params{InputCommon::GenerateKeyboardParam(
+                Config::default_analogs[analog_id][sub_button_id])};
+            SetAnalogButton(params, analogs_param[analog_id], analog_sub_buttons[sub_button_id]);
         }
     }
     updateButtonLabels();
@@ -157,7 +168,7 @@ void ConfigureInput::updateButtonLabels() {
 
     for (int analog_id = 0; analog_id < Settings::NativeAnalog::NumAnalogs; analog_id++) {
         if (analogs_param[analog_id].Get("engine", "") != "analog_from_button") {
-            for (QPushButton* button : analog_map[analog_id]) {
+            for (QPushButton* button : analog_map_buttons[analog_id]) {
                 if (button)
                     button->setText(non_keyboard);
             }
@@ -165,18 +176,22 @@ void ConfigureInput::updateButtonLabels() {
             for (int sub_button_id = 0; sub_button_id < ANALOG_SUB_BUTTONS_NUM; sub_button_id++) {
                 Common::ParamPackage param(
                     analogs_param[analog_id].Get(analog_sub_buttons[sub_button_id], ""));
-                if (analog_map[analog_id][sub_button_id])
-                    analog_map[analog_id][sub_button_id]->setText(KeyToText(param));
+                if (analog_map_buttons[analog_id][sub_button_id])
+                    analog_map_buttons[analog_id][sub_button_id]->setText(KeyToText(param));
             }
         }
     }
 }
 
-void ConfigureInput::handleClick(QPushButton* button, std::function<void(int)> new_key_setter) {
+void ConfigureInput::handleClick(QPushButton* button,
+                                 std::function<void(Common::ParamPackage)> new_input_setter,
+                                 InputCommon::Polling::DeviceType type) {
     button->setText(tr("[press key]"));
     button->setFocus();
 
-    key_setter = new_key_setter;
+    input_setter = new_input_setter;
+
+    device_pollers = InputCommon::Polling::getPollers(type);
 
     grabKeyboard();
     grabMouse();
@@ -187,13 +202,13 @@ void ConfigureInput::keyPressEvent(QKeyEvent* event) {
     releaseKeyboard();
     releaseMouse();
 
-    if (!key_setter || !event)
+    if (!input_setter || !event)
         return;
 
     if (event->key() != Qt::Key_Escape)
-        (*key_setter)(event->key());
+        (*input_setter)(Common::ParamPackage{InputCommon::GenerateKeyboardParam(event->key())});
 
     updateButtonLabels();
-    key_setter = boost::none;
+    input_setter = boost::none;
     timer->stop();
 }

@@ -8,6 +8,7 @@
 #include <functional>
 #include <memory>
 #include <string>
+#include <unordered_map>
 #include <QKeyEvent>
 #include <QWidget>
 #include <boost/optional.hpp>
@@ -21,6 +22,13 @@ class QTimer;
 
 namespace Ui {
 class ConfigureInput;
+}
+
+namespace InputCommon {
+namespace Polling {
+class DevicePoller;
+enum class DeviceType;
+}
 }
 
 class ConfigureInput : public QWidget {
@@ -38,7 +46,7 @@ private:
     std::unique_ptr<QTimer> timer;
 
     /// This will be the the setting function when an input is awaiting configuration.
-    boost::optional<std::function<void(int)>> key_setter;
+    boost::optional<std::function<void(Common::ParamPackage)>> input_setter;
 
     std::array<Common::ParamPackage, Settings::NativeButton::NumButtons> buttons_param;
     std::array<Common::ParamPackage, Settings::NativeAnalog::NumAnalogs> analogs_param;
@@ -51,9 +59,13 @@ private:
     /// Each analog input is represented by five QPushButtons which represents up, down, left, right
     /// and modifier
     std::array<std::array<QPushButton*, ANALOG_SUB_BUTTONS_NUM>, Settings::NativeAnalog::NumAnalogs>
-        analog_map;
+        analog_map_buttons;
+
+    std::array<QPushButton*, Settings::NativeAnalog::NumAnalogs> analog_map_stick;
 
     static const std::array<std::string, ANALOG_SUB_BUTTONS_NUM> analog_sub_buttons;
+
+    std::vector<std::unique_ptr<InputCommon::Polling::DevicePoller>> device_pollers;
 
     /// Load configuration settings.
     void loadConfiguration();
@@ -63,7 +75,9 @@ private:
     void updateButtonLabels();
 
     /// Called when the button was pressed.
-    void handleClick(QPushButton* button, std::function<void(int)> new_key_setter);
+    void handleClick(QPushButton* button,
+                     std::function<void(Common::ParamPackage)> new_input_setter,
+                     InputCommon::Polling::DeviceType type);
     /// Handle key press events.
     void keyPressEvent(QKeyEvent* event) override;
 };
