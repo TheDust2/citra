@@ -10,7 +10,6 @@
 #include "citra_qt/configuration/config.h"
 #include "citra_qt/configuration/configure_input.h"
 #include "common/param_package.h"
-#include "input_common/main.h"
 
 const std::array<std::string, ConfigureInput::ANALOG_SUB_BUTTONS_NUM>
     ConfigureInput::analog_sub_buttons{{

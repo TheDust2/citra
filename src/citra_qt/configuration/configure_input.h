@@ -14,6 +14,7 @@
 #include <boost/optional.hpp>
 #include "common/param_package.h"
 #include "core/settings.h"
+#include "input_common/main.h"
 #include "ui_configure_input.h"
 
 class QPushButton;
@@ -22,13 +23,6 @@ class QTimer;
 
 namespace Ui {
 class ConfigureInput;
-}
-
-namespace InputCommon {
-namespace Polling {
-class DevicePoller;
-enum class DeviceType;
-}
 }
 
 class ConfigureInput : public QWidget {
