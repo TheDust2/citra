@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include <memory>
+#include <vector>
 #include "common/param_package.h"
 #include "core/frontend/input.h"
 #include "input_common/main.h"

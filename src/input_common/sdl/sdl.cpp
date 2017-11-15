@@ -3,7 +3,6 @@
 // Refer to the license.txt file included.
 
 #include <cmath>
-#include <memory>
 #include <string>
 #include <tuple>
 #include <unordered_map>
