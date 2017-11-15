@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <memory>
 #include <utility>
+#include <QMessageBox>
 #include <QTimer>
 #include "citra_qt/configuration/config.h"
 #include "citra_qt/configuration/configure_input.h"
@@ -43,7 +44,8 @@ static void SetAnalogButton(const Common::ParamPackage& input_param, Common::Par
 
 ConfigureInput::ConfigureInput(QWidget* parent)
     : QWidget(parent), ui(std::make_unique<Ui::ConfigureInput>()),
-      timer(std::make_unique<QTimer>()) {
+      timeout_timer(std::make_unique<QTimer>()), poll_timer(std::make_unique<QTimer>()),
+      want_keyboard_keys(false) {
 
     ui->setupUi(this);
     setFocusPolicy(Qt::ClickFocus);
@@ -91,22 +93,29 @@ ConfigureInput::ConfigureInput(QWidget* parent)
             }
         }
         connect(analog_map_stick[analog_id], &QPushButton::released, [=]() {
+            QMessageBox::information(
+                this, "Information",
+                "After pressing OK, first move your joystick horizontally, and then vertically.");
             handleClick(analog_map_stick[analog_id],
-                        [](Common::ParamPackage params) {
-
-                        },
+                        [=](Common::ParamPackage params) { analogs_param[analog_id] = params; },
                         InputCommon::Polling::DeviceType::Analog);
         });
     }
 
     connect(ui->buttonRestoreDefaults, &QPushButton::released, [this]() { restoreDefaults(); });
 
-    timer->setSingleShot(true);
-    connect(timer.get(), &QTimer::timeout, [this]() {
-        releaseKeyboard();
-        releaseMouse();
-        input_setter = boost::none;
-        updateButtonLabels();
+    timeout_timer->setSingleShot(true);
+    connect(timeout_timer.get(), &QTimer::timeout, [this]() { setPollingResult({}, true); });
+
+    connect(poll_timer.get(), &QTimer::timeout, [this]() {
+        Common::ParamPackage params;
+        for (auto& poller : device_pollers) {
+            params = poller->GetNextInput();
+            if (params.Has("engine")) {
+                setPollingResult(params, false);
+                return;
+            }
+        }
     });
 
     this->loadConfiguration();
@@ -155,7 +164,9 @@ void ConfigureInput::updateButtonLabels() {
     QString non_keyboard(tr("[non-keyboard]"));
 
     auto KeyToText = [&non_keyboard](const Common::ParamPackage& param) {
-        if (param.Get("engine", "") != "keyboard") {
+        if (!param.Has("engine")) {
+            return QString("[not set]");
+        } else if (param.Get("engine", "") != "keyboard") {
             return non_keyboard;
         } else {
             return getKeyName(param.Get("code", 0));
@@ -180,6 +191,7 @@ void ConfigureInput::updateButtonLabels() {
                     analog_map_buttons[analog_id][sub_button_id]->setText(KeyToText(param));
             }
         }
+        analog_map_stick[analog_id]->setText("Set Analog Stick");
     }
 }
 
@@ -193,22 +205,52 @@ void ConfigureInput::handleClick(QPushButton* button,
 
     device_pollers = InputCommon::Polling::getPollers(type);
 
+    // Keyboard keys can only be used as button devices
+    if (type == InputCommon::Polling::DeviceType::Button) {
+        want_keyboard_keys = true;
+    } else {
+        want_keyboard_keys = false;
+    }
+
+    for (auto& poller : device_pollers) {
+        poller->Start();
+    }
+
     grabKeyboard();
     grabMouse();
-    timer->start(5000); // Cancel after 5 seconds
+    timeout_timer->start(5000); // Cancel after 5 seconds
+    poll_timer->start(200); // Check for new inputs every 200ms
 }
 
-void ConfigureInput::keyPressEvent(QKeyEvent* event) {
+void ConfigureInput::setPollingResult(const Common::ParamPackage& params, bool abort) {
     releaseKeyboard();
     releaseMouse();
+    timeout_timer->stop();
+    poll_timer->stop();
+    for (auto& poller : device_pollers) {
+        poller->Stop();
+    }
 
-    if (!input_setter || !event)
-        return;
-
-    if (event->key() != Qt::Key_Escape)
-        (*input_setter)(Common::ParamPackage{InputCommon::GenerateKeyboardParam(event->key())});
+    if (!abort) {
+        (*input_setter)(params);
+    }
 
     updateButtonLabels();
     input_setter = boost::none;
-    timer->stop();
+}
+
+void ConfigureInput::keyPressEvent(QKeyEvent* event) {
+    if (!input_setter || !event)
+        return;
+
+    if (event->key() != Qt::Key_Escape) {
+        if (want_keyboard_keys) {
+            setPollingResult(Common::ParamPackage{InputCommon::GenerateKeyboardParam(event->key())},
+                             false);
+        } else {
+            // Escape key wasn't pressed and we don't want any keyboard keys, so don't stop polling
+            return;
+        }
+    }
+    setPollingResult({}, true);
 }
