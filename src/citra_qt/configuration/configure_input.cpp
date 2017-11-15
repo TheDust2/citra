@@ -32,8 +32,8 @@ static QString getKeyName(int key_code) {
     }
 }
 
-static void SetAnalogButton(const Common::ParamPackage& input_param, Common::ParamPackage& analog_param,
-                         const std::string& button_name) {
+static void SetAnalogButton(const Common::ParamPackage& input_param,
+                            Common::ParamPackage& analog_param, const std::string& button_name) {
     if (analog_param.Get("engine", "") != "analog_from_button") {
         analog_param = {
             {"engine", "analog_from_button"}, {"modifier_scale", "0.5"},
@@ -219,7 +219,7 @@ void ConfigureInput::handleClick(QPushButton* button,
     grabKeyboard();
     grabMouse();
     timeout_timer->start(5000); // Cancel after 5 seconds
-    poll_timer->start(200); // Check for new inputs every 200ms
+    poll_timer->start(200);     // Check for new inputs every 200ms
 }
 
 void ConfigureInput::setPollingResult(const Common::ParamPackage& params, bool abort) {
