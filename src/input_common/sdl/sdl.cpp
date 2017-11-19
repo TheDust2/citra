@@ -328,6 +328,9 @@ public:
         while (SDL_PollEvent(&event)) {
             switch (event.type) {
             case SDL_JOYAXISMOTION:
+                if (std::abs(event.jaxis.value / 32767.0) < 0.5) {
+                    break;
+                }
             case SDL_JOYBUTTONUP:
             case SDL_JOYHATMOTION:
                 return SDLEventToButtonParamPackage(event);
@@ -339,7 +342,7 @@ public:
 
 class SDLAnalogPoller final : public SDLPoller {
 public:
-    SDLAnalogPoller() : analog_axes(-1, -1), analog_axes_joystick(-1) {}
+    SDLAnalogPoller() : analog_xaxis(-1), analog_yaxis(-1), analog_axes_joystick(-1) {}
 
     ~SDLAnalogPoller() = default;
 
@@ -347,34 +350,36 @@ public:
         SDLPoller::Start();
 
         // Reset stored axes
-        analog_axes = std::make_pair(-1, -1);
+        analog_xaxis = -1;
+        analog_yaxis = -1;
         analog_axes_joystick = -1;
     }
 
     Common::ParamPackage GetNextInput() override {
         SDL_Event event;
         while (SDL_PollEvent(&event)) {
-            if (event.type != SDL_JOYAXISMOTION) {
+            if (event.type != SDL_JOYAXISMOTION || std::abs(event.jaxis.value / 32767.0) < 0.5) {
                 continue;
             }
             // An analog device needs two axes, so we need to store the axis for later and wait for
             // a second SDL event. The axes also must be from the same joystick.
             int axis = event.jaxis.axis;
-            if (analog_axes.first == -1) {
-                analog_axes.first = axis;
+            if (analog_xaxis == -1) {
+                analog_xaxis = axis;
                 analog_axes_joystick = event.jaxis.which;
-            } else if (analog_axes.second == -1 && analog_axes.first != axis &&
+            } else if (analog_yaxis == -1 && analog_xaxis != axis &&
                        analog_axes_joystick == event.jaxis.which) {
-                analog_axes.second = axis;
+                analog_yaxis = axis;
             }
         }
         Common::ParamPackage params;
-        if (analog_axes.first != -1 && analog_axes.second != -1) {
+        if (analog_xaxis != -1 && analog_yaxis != -1) {
             params.Set("engine", "sdl");
             params.Set("joystick", analog_axes_joystick);
-            params.Set("axis_x", analog_axes.first);
-            params.Set("axis_y", analog_axes.second);
-            analog_axes = std::make_pair(-1, -1);
+            params.Set("axis_x", analog_xaxis);
+            params.Set("axis_y", analog_yaxis);
+            analog_xaxis = -1;
+            analog_yaxis = -1;
             analog_axes_joystick = -1;
             return params;
         }
@@ -382,7 +387,8 @@ public:
     }
 
 private:
-    std::pair<int, int> analog_axes;
+    int analog_xaxis;
+    int analog_yaxis;
     SDL_JoystickID analog_axes_joystick;
 };
 
