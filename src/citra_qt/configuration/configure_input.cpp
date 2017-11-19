@@ -71,9 +71,10 @@ ConfigureInput::ConfigureInput(QWidget* parent)
     for (int button_id = 0; button_id < Settings::NativeButton::NumButtons; button_id++) {
         if (button_map[button_id])
             connect(button_map[button_id], &QPushButton::released, [=]() {
-                handleClick(button_map[button_id],
-                            [=](const Common::ParamPackage& params) { buttons_param[button_id] = params; },
-                            InputCommon::Polling::DeviceType::Button);
+                handleClick(
+                    button_map[button_id],
+                    [=](const Common::ParamPackage& params) { buttons_param[button_id] = params; },
+                    InputCommon::Polling::DeviceType::Button);
             });
     }
 
@@ -95,9 +96,10 @@ ConfigureInput::ConfigureInput(QWidget* parent)
             QMessageBox::information(
                 this, "Information",
                 "After pressing OK, first move your joystick horizontally, and then vertically.");
-            handleClick(analog_map_stick[analog_id],
-                        [=](const Common::ParamPackage& params) { analogs_param[analog_id] = params; },
-                        InputCommon::Polling::DeviceType::Analog);
+            handleClick(
+                analog_map_stick[analog_id],
+                [=](const Common::ParamPackage& params) { analogs_param[analog_id] = params; },
+                InputCommon::Polling::DeviceType::Analog);
         });
     }
 
