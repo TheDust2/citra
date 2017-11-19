@@ -72,7 +72,7 @@ ConfigureInput::ConfigureInput(QWidget* parent)
         if (button_map[button_id])
             connect(button_map[button_id], &QPushButton::released, [=]() {
                 handleClick(button_map[button_id],
-                            [=](Common::ParamPackage params) { buttons_param[button_id] = params; },
+                            [=](const Common::ParamPackage& params) { buttons_param[button_id] = params; },
                             InputCommon::Polling::DeviceType::Button);
             });
     }
@@ -83,7 +83,7 @@ ConfigureInput::ConfigureInput(QWidget* parent)
                 connect(analog_map_buttons[analog_id][sub_button_id], &QPushButton::released,
                         [=]() {
                             handleClick(analog_map_buttons[analog_id][sub_button_id],
-                                        [=](Common::ParamPackage params) {
+                                        [=](const Common::ParamPackage& params) {
                                             SetAnalogButton(params, analogs_param[analog_id],
                                                             analog_sub_buttons[sub_button_id]);
                                         },
@@ -96,7 +96,7 @@ ConfigureInput::ConfigureInput(QWidget* parent)
                 this, "Information",
                 "After pressing OK, first move your joystick horizontally, and then vertically.");
             handleClick(analog_map_stick[analog_id],
-                        [=](Common::ParamPackage params) { analogs_param[analog_id] = params; },
+                        [=](const Common::ParamPackage& params) { analogs_param[analog_id] = params; },
                         InputCommon::Polling::DeviceType::Analog);
         });
     }
@@ -195,7 +195,7 @@ void ConfigureInput::updateButtonLabels() {
 }
 
 void ConfigureInput::handleClick(QPushButton* button,
-                                 std::function<void(Common::ParamPackage)> new_input_setter,
+                                 std::function<void(const Common::ParamPackage&)> new_input_setter,
                                  InputCommon::Polling::DeviceType type) {
     button->setText(tr("[press key]"));
     button->setFocus();

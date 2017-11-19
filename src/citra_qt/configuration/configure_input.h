@@ -41,7 +41,7 @@ private:
     std::unique_ptr<QTimer> poll_timer;
 
     /// This will be the the setting function when an input is awaiting configuration.
-    boost::optional<std::function<void(Common::ParamPackage)>> input_setter;
+    boost::optional<std::function<void(const Common::ParamPackage&)>> input_setter;
 
     std::array<Common::ParamPackage, Settings::NativeButton::NumButtons> buttons_param;
     std::array<Common::ParamPackage, Settings::NativeAnalog::NumAnalogs> analogs_param;
@@ -77,7 +77,7 @@ private:
 
     /// Called when the button was pressed.
     void handleClick(QPushButton* button,
-                     std::function<void(Common::ParamPackage)> new_input_setter,
+                     std::function<void(const Common::ParamPackage&)> new_input_setter,
                      InputCommon::Polling::DeviceType type);
 
     /// Finish polling and configure input using the input_setter
