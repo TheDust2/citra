@@ -72,9 +72,9 @@ std::string GenerateAnalogParamFromKeys(int key_up, int key_down, int key_left, 
 
 namespace Polling {
 
-std::vector<std::unique_ptr<DevicePoller>> getPollers(DeviceType type) {
+std::vector<std::unique_ptr<DevicePoller>> GetPollers(DeviceType type) {
 #ifdef HAVE_SDL2
-    return SDL::Polling::getPollers(type);
+    return SDL::Polling::GetPollers(type);
 #else
     return {};
 #endif

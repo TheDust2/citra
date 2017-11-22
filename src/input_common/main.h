@@ -57,6 +57,6 @@ public:
 };
 
 // Get all DevicePoller from all backends for a specific device type
-std::vector<std::unique_ptr<DevicePoller>> getPollers(DeviceType type);
+std::vector<std::unique_ptr<DevicePoller>> GetPollers(DeviceType type);
 } // namespace Polling
 } // namespace InputCommon

@@ -392,7 +392,7 @@ private:
     SDL_JoystickID analog_axes_joystick;
 };
 
-std::vector<std::unique_ptr<InputCommon::Polling::DevicePoller>> getPollers(
+std::vector<std::unique_ptr<InputCommon::Polling::DevicePoller>> GetPollers(
     InputCommon::Polling::DeviceType type) {
     std::vector<std::unique_ptr<InputCommon::Polling::DevicePoller>> pollers;
     switch (type) {

@@ -204,7 +204,7 @@ void ConfigureInput::handleClick(QPushButton* button,
 
     input_setter = new_input_setter;
 
-    device_pollers = InputCommon::Polling::getPollers(type);
+    device_pollers = InputCommon::Polling::GetPollers(type);
 
     // Keyboard keys can only be used as button devices
     if (type == InputCommon::Polling::DeviceType::Button) {
