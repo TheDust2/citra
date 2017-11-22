@@ -4,9 +4,13 @@
 
 #pragma once
 
+#include <memory>
 #include <string>
 #include <vector>
-#include "common/param_package.h"
+
+namespace Common {
+class ParamPackage;
+}
 
 namespace InputCommon {
 

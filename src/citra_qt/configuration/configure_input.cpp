@@ -43,8 +43,7 @@ static void SetAnalogButton(const Common::ParamPackage& input_param,
 
 ConfigureInput::ConfigureInput(QWidget* parent)
     : QWidget(parent), ui(std::make_unique<Ui::ConfigureInput>()),
-      timeout_timer(std::make_unique<QTimer>()), poll_timer(std::make_unique<QTimer>()),
-      want_keyboard_keys(false) {
+      timeout_timer(std::make_unique<QTimer>()), poll_timer(std::make_unique<QTimer>()) {
 
     ui->setupUi(this);
     setFocusPolicy(Qt::ClickFocus);
@@ -207,11 +206,7 @@ void ConfigureInput::handleClick(QPushButton* button,
     device_pollers = InputCommon::Polling::GetPollers(type);
 
     // Keyboard keys can only be used as button devices
-    if (type == InputCommon::Polling::DeviceType::Button) {
-        want_keyboard_keys = true;
-    } else {
-        want_keyboard_keys = false;
-    }
+    want_keyboard_keys = type == InputCommon::Polling::DeviceType::Button;
 
     for (auto& poller : device_pollers) {
         poller->Start();

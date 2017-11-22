@@ -66,7 +66,7 @@ private:
 
     /// A flag to indicate if keyboard keys are okay when configuring an input. If this is false,
     /// keyboard events are ignored.
-    bool want_keyboard_keys;
+    bool want_keyboard_keys = false;
 
     /// Load configuration settings.
     void loadConfiguration();

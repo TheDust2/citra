@@ -6,11 +6,18 @@
 
 #include <memory>
 #include <vector>
-#include "common/param_package.h"
 #include "core/frontend/input.h"
-#include "input_common/main.h"
 
 union SDL_Event;
+namespace Common {
+class ParamPackage;
+}
+namespace InputCommon {
+namespace Polling {
+class DevicePoller;
+enum class DeviceType;
+} // namespace Polling
+} // namespace InputCommon
 
 namespace InputCommon {
 namespace SDL {

@@ -10,6 +10,8 @@
 #include <SDL.h>
 #include "common/logging/log.h"
 #include "common/math_util.h"
+#include "common/param_package.h"
+#include "input_common/main.h"
 #include "input_common/sdl/sdl.h"
 
 namespace InputCommon {
@@ -306,7 +308,7 @@ public:
         // Empty event queue to get rid of old events. citra-qt doesn't use the queue
         SDL_Event dummy;
         while (SDL_PollEvent(&dummy)) {
-        };
+        }
     }
 
     void Stop() override {
@@ -342,7 +344,7 @@ public:
 
 class SDLAnalogPoller final : public SDLPoller {
 public:
-    SDLAnalogPoller() : analog_xaxis(-1), analog_yaxis(-1), analog_axes_joystick(-1) {}
+    SDLAnalogPoller() = default;
 
     ~SDLAnalogPoller() = default;
 
@@ -387,9 +389,9 @@ public:
     }
 
 private:
-    int analog_xaxis;
-    int analog_yaxis;
-    SDL_JoystickID analog_axes_joystick;
+    int analog_xaxis = -1;
+    int analog_yaxis = -1;
+    SDL_JoystickID analog_axes_joystick = -1;
 };
 
 std::vector<std::unique_ptr<InputCommon::Polling::DevicePoller>> GetPollers(
