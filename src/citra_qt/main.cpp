@@ -571,7 +571,9 @@ void GMainWindow::BootGame(const QString& filename) {
     render_window->setFocus();
 
     emulation_running = true;
-    ToggleFullscreen();
+    if (ui.action_Fullscreen->isChecked()) {
+        ShowFullscreen();
+    }
     OnStartGame();
 }
 
@@ -719,13 +721,14 @@ void GMainWindow::OnStartGame() {
     qRegisterMetaType<Core::System::ResultStatus>("Core::System::ResultStatus");
     qRegisterMetaType<std::string>("std::string");
     connect(emu_thread.get(), SIGNAL(ErrorThrown(Core::System::ResultStatus, std::string)), this,
-            SLOT(OnCoreError(Core::System::ResultStatus, std::string)));
+        SLOT(OnCoreError(Core::System::ResultStatus, std::string)));
 
     ui.action_Start->setEnabled(false);
     ui.action_Start->setText(tr("Continue"));
 
     ui.action_Pause->setEnabled(true);
     ui.action_Stop->setEnabled(true);
+
 }
 
 void GMainWindow::OnPauseGame() {
@@ -745,21 +748,36 @@ void GMainWindow::ToggleFullscreen() {
         return;
     }
     if (ui.action_Fullscreen->isChecked()) {
-        if (ui.action_Single_Window_Mode->isChecked()) {
-            ui.menubar->hide();
-            statusBar()->hide();
-            showFullScreen();
-        } else {
-            render_window->showFullScreen();
-        }
-    } else {
-        if (ui.action_Single_Window_Mode->isChecked()) {
-            statusBar()->setVisible(ui.action_Show_Status_Bar->isChecked());
-            ui.menubar->show();
-            showNormal();
-        } else {
-            render_window->showNormal();
-        }
+        ShowFullscreen();
+    }
+    else {
+        HideFullscreen();
+    }
+}
+
+void GMainWindow::ShowFullscreen() {
+    if (ui.action_Single_Window_Mode->isChecked()) {
+        UISettings::values.geometry = saveGeometry();
+        ui.menubar->hide();
+        statusBar()->hide();
+        showFullScreen();
+    }
+    else {
+        UISettings::values.renderwindow_geometry = render_window->saveGeometry();
+        render_window->showFullScreen();
+    }
+}
+
+void GMainWindow::HideFullscreen() {
+    if (ui.action_Single_Window_Mode->isChecked()) {
+        statusBar()->setVisible(ui.action_Show_Status_Bar->isChecked());
+        ui.menubar->show();
+        showNormal();
+        restoreGeometry(UISettings::values.geometry);
+    }
+    else {
+        render_window->showNormal();
+        render_window->restoreGeometry(UISettings::values.renderwindow_geometry);
     }
 }
 
