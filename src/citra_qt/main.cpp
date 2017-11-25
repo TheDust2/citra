@@ -721,14 +721,13 @@ void GMainWindow::OnStartGame() {
     qRegisterMetaType<Core::System::ResultStatus>("Core::System::ResultStatus");
     qRegisterMetaType<std::string>("std::string");
     connect(emu_thread.get(), SIGNAL(ErrorThrown(Core::System::ResultStatus, std::string)), this,
-        SLOT(OnCoreError(Core::System::ResultStatus, std::string)));
+            SLOT(OnCoreError(Core::System::ResultStatus, std::string)));
 
     ui.action_Start->setEnabled(false);
     ui.action_Start->setText(tr("Continue"));
 
     ui.action_Pause->setEnabled(true);
     ui.action_Stop->setEnabled(true);
-
 }
 
 void GMainWindow::OnPauseGame() {
