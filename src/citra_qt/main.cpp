@@ -748,8 +748,7 @@ void GMainWindow::ToggleFullscreen() {
     }
     if (ui.action_Fullscreen->isChecked()) {
         ShowFullscreen();
-    }
-    else {
+    } else {
         HideFullscreen();
     }
 }
@@ -760,8 +759,7 @@ void GMainWindow::ShowFullscreen() {
         ui.menubar->hide();
         statusBar()->hide();
         showFullScreen();
-    }
-    else {
+    } else {
         UISettings::values.renderwindow_geometry = render_window->saveGeometry();
         render_window->showFullScreen();
     }
@@ -773,8 +771,7 @@ void GMainWindow::HideFullscreen() {
         ui.menubar->show();
         showNormal();
         restoreGeometry(UISettings::values.geometry);
-    }
-    else {
+    } else {
         render_window->showNormal();
         render_window->restoreGeometry(UISettings::values.renderwindow_geometry);
     }
