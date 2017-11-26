@@ -187,5 +187,12 @@ void ARM_Dynarmic::PageTableChanged() {
 }
 
 void ARM_Dynarmic::InvalidateCacheRange(u32 start_address, size_t length) {
-    jit->InvalidateCacheRange(start_address, length);
+    for (const auto& j : jits) {
+        if (j.second.get() == jit) {
+            jit->InvalidateCacheRange(start_address, length);
+        } else {
+            // todo: how should this be handled ?
+            j.second->ClearCache();
+        }
+    }
 }
