@@ -301,6 +301,7 @@ public:
 
     void Start() override {
         // SDL joysticks must be opened, otherwise they don't generate events
+        SDL_JoystickUpdate();
         int num_joysticks = SDL_NumJoysticks();
         for (int i = 0; i < num_joysticks; i++) {
             joysticks_opened.emplace_back(GetJoystick(i));
