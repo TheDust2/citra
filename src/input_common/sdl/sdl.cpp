@@ -71,6 +71,10 @@ public:
         return (SDL_JoystickGetHat(joystick.get(), hat) & direction) != 0;
     }
 
+    SDL_JoystickID GetJoystickID() const {
+        return SDL_JoystickInstanceID(joystick.get());
+    }
+
 private:
     std::unique_ptr<SDL_Joystick, decltype(&SDL_JoystickClose)> joystick;
 };
@@ -249,11 +253,26 @@ void Shutdown() {
     }
 }
 
+/**
+ * This function converts a joystick ID used in SDL events to the device index. This is necessary
+ * because Citra opens joysticks using their indices, not their IDs.
+ */
+static int JoystickIDToDeviceIndex(SDL_JoystickID id) {
+    int num_joysticks = SDL_NumJoysticks();
+    for (int i = 0; i < num_joysticks; i++) {
+        auto joystick = GetJoystick(i);
+        if (joystick->GetJoystickID() == id) {
+            return i;
+        }
+    }
+    return -1;
+}
+
 Common::ParamPackage SDLEventToButtonParamPackage(const SDL_Event& event) {
     Common::ParamPackage params({{"engine", "sdl"}});
     switch (event.type) {
     case SDL_JOYAXISMOTION:
-        params.Set("joystick", event.jaxis.which);
+        params.Set("joystick", JoystickIDToDeviceIndex(event.jaxis.which));
         params.Set("axis", event.jaxis.axis);
         if (event.jaxis.value > 0) {
             params.Set("direction", "+");
@@ -264,11 +283,11 @@ Common::ParamPackage SDLEventToButtonParamPackage(const SDL_Event& event) {
         }
         break;
     case SDL_JOYBUTTONUP:
-        params.Set("joystick", event.jbutton.which);
+        params.Set("joystick", JoystickIDToDeviceIndex(event.jbutton.which));
         params.Set("button", event.jbutton.button);
         break;
     case SDL_JOYHATMOTION:
-        params.Set("joystick", event.jhat.which);
+        params.Set("joystick", JoystickIDToDeviceIndex(event.jhat.which));
         params.Set("hat", event.jhat.hat);
         switch (event.jhat.value) {
         case SDL_HAT_UP:
@@ -378,7 +397,7 @@ public:
         Common::ParamPackage params;
         if (analog_xaxis != -1 && analog_yaxis != -1) {
             params.Set("engine", "sdl");
-            params.Set("joystick", analog_axes_joystick);
+            params.Set("joystick", JoystickIDToDeviceIndex(analog_axes_joystick));
             params.Set("axis_x", analog_xaxis);
             params.Set("axis_y", analog_yaxis);
             analog_xaxis = -1;
