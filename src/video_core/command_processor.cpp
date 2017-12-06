@@ -322,6 +322,10 @@ static void WritePicaReg(u32 id, u32 value, u32 mask) {
 
         const auto& index_info = regs.pipeline.index_array;
         const u8* index_address_8 = Memory::GetPhysicalPointer(base_address + index_info.offset);
+            if (!index_address_8) {
+                LOG_CRITICAL(HW_GPU, "Invalid index_address_8 %08x", index_address_8);
+                return;
+            }
         const u16* index_address_16 = reinterpret_cast<const u16*>(index_address_8);
         bool index_u16 = index_info.format != 0;
 
@@ -423,7 +427,7 @@ static void WritePicaReg(u32 id, u32 value, u32 mask) {
         auto& thread_pool = Common::ThreadPool::GetPool();
         std::vector<std::future<void>> futures;
 
-        constexpr unsigned int MIN_VERTICES_PER_THREAD = 10;
+        constexpr unsigned int MIN_VERTICES_PER_THREAD = 15;
         unsigned int vs_threads = regs.pipeline.num_vertices / MIN_VERTICES_PER_THREAD;
         vs_threads = std::min(vs_threads, std::thread::hardware_concurrency() - 1);
 
